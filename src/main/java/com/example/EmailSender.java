@@ -1,7 +1,9 @@
 package com.example;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import javax.swing.*;
+
+import io.github.cdimascio.dotenv.Dotenv;
+
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.awt.*;
@@ -15,7 +17,7 @@ import java.util.Properties;
 public class EmailSender extends JFrame {
     private JTextField emailField, toField, ccField, dateRangeField;
     private JPasswordField passwordField;
-    private JLabel attachmentLabel;
+    private JLabel attachmentLinkLabel;
     private JButton sendButton, attachButton;
     private File selectedFile;
 
@@ -24,11 +26,16 @@ public class EmailSender extends JFrame {
         String email = dotenv.get("EMAIL_ADDRESS");
         String password = dotenv.get("EMAIL_PASSWORD");
 
+        // when converting to .exe file, uncomment this
+        // String email = System.getProperty("EMAIL_ADDRESS");
+        // String password = System.getProperty("EMAIL_PASSWORD");
+
         setTitle("Email Sender");
         setSize(400, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
+        setResizable(false);
 
         ImageIcon icon = new ImageIcon(getClass().getResource("/images/e-sig.png"));
         setIconImage(icon.getImage());
@@ -48,7 +55,7 @@ public class EmailSender extends JFrame {
         JLabel dateRangeLabel = new JLabel("Date Range:");
         dateRangeField = new JTextField("SEPTEMBER 1-15");
 
-        attachmentLabel = new JLabel("No file attached");
+        attachmentLinkLabel = new JLabel("No file attached");
         attachButton = new JButton("Attach File");
         sendButton = new JButton("Send Email");
 
@@ -75,10 +82,10 @@ public class EmailSender extends JFrame {
         ccField.setBounds(170, 140, 200, 25);
         dateRangeLabel.setBounds(20, 180, 100, 25);
         dateRangeField.setBounds(120, 180, 250, 25);
-        linkLabel.setBounds(20, 220, 120, 30);
-        attachButton.setBounds(150, 220, 120, 30);
-        attachmentLabel.setBounds(280, 220, 200, 25);
-        sendButton.setBounds(150, 260, 100, 30);
+        linkLabel.setBounds(20, 400, 120, 30);
+        attachButton.setBounds(139, 220, 120, 30);
+        attachmentLinkLabel.setBounds(150, 260, 250, 25);
+        sendButton.setBounds(150, 400, 100, 30);
 
         add(emailLabel);
         add(emailField);
@@ -92,7 +99,7 @@ public class EmailSender extends JFrame {
         add(dateRangeField);
         add(linkLabel);
         add(attachButton);
-        add(attachmentLabel);
+        add(attachmentLinkLabel);
         add(sendButton);
 
         attachButton.addActionListener(new ActionListener() {
@@ -123,19 +130,52 @@ public class EmailSender extends JFrame {
         int returnValue = fileChooser.showOpenDialog(this);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             selectedFile = fileChooser.getSelectedFile();
-            attachmentLabel.setText("Attached: " + selectedFile.getAbsolutePath());
+            attachmentLinkLabel.setText("<html><a href='#'>View Attached PDF</a></html>");
+            attachmentLinkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            attachmentLinkLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    openFileInBrowser(selectedFile);
+                }
+            });
+        }
+    }
+
+    private void openFileInBrowser(File file) {
+        try {
+            Desktop.getDesktop().browse(file.toURI());
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error opening file in browser: " + e.getMessage());
         }
     }
 
     private void sendEmail() {
         String email = emailField.getText();
-        String to = toField.getText();
-        String cc = ccField.getText();
+        String to = toField.getText().trim();
+        String cc = ccField.getText().trim();
         String dateRange = dateRangeField.getText();
         String password = new String(passwordField.getPassword());
         String subject = String.format(EmailConstants.SUBJECT_TEMPLATE, dateRange);
         String body = String.format(EmailConstants.BODY_TEMPLATE, dateRange);
 
+        if (to.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter the recipient email address.",
+                    "Recipient Required", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (cc.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter 2 CC email address.", "CC Required",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (selectedFile == null) {
+            JOptionPane.showMessageDialog(this, "Please attach a file before sending the email.", "Attachment Required",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         Properties properties = new Properties();
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
@@ -153,6 +193,7 @@ public class EmailSender extends JFrame {
             message.setFrom(new InternetAddress(email));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
 
+            // Set CC recipients if provided
             if (!cc.isEmpty()) {
                 message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
             }
@@ -160,19 +201,17 @@ public class EmailSender extends JFrame {
             message.setSubject(subject);
             message.setText(body);
 
-            if (selectedFile != null) {
-                MimeBodyPart messageBodyPart = new MimeBodyPart();
-                messageBodyPart.setText(body);
-                Multipart multipart = new MimeMultipart();
-                multipart.addBodyPart(messageBodyPart);
+            // Set up the email with attachment
+            MimeBodyPart messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setText(body);
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(messageBodyPart);
 
-                MimeBodyPart attachPart = new MimeBodyPart();
-                attachPart.attachFile(selectedFile);
-                multipart.addBodyPart(attachPart);
+            MimeBodyPart attachPart = new MimeBodyPart();
+            attachPart.attachFile(selectedFile);
+            multipart.addBodyPart(attachPart);
 
-                message.setContent(multipart);
-            }
-
+            message.setContent(multipart);
             Transport.send(message);
             JOptionPane.showMessageDialog(this, "Email sent successfully!");
 
