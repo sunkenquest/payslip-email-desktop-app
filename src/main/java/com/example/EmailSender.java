@@ -64,7 +64,6 @@ public class EmailSender extends JFrame {
             }
         });
 
-        // Set layout
         setLayout(null);
         emailLabel.setBounds(20, 20, 100, 25);
         emailField.setBounds(120, 20, 250, 25);
@@ -76,12 +75,11 @@ public class EmailSender extends JFrame {
         ccField.setBounds(170, 140, 200, 25);
         dateRangeLabel.setBounds(20, 180, 100, 25);
         dateRangeField.setBounds(120, 180, 250, 25);
-        linkLabel.setBounds(20, 220, 120, 30); // Adjust position for link label
+        linkLabel.setBounds(20, 220, 120, 30);
         attachButton.setBounds(150, 220, 120, 30);
         attachmentLabel.setBounds(280, 220, 200, 25);
         sendButton.setBounds(150, 260, 100, 30);
 
-        // Add components to frame
         add(emailLabel);
         add(emailField);
         add(passwordLabel);
@@ -92,7 +90,7 @@ public class EmailSender extends JFrame {
         add(ccField);
         add(dateRangeLabel);
         add(dateRangeField);
-        add(linkLabel); // Add hyperlink label
+        add(linkLabel);
         add(attachButton);
         add(attachmentLabel);
         add(sendButton);
