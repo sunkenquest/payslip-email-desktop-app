@@ -4,13 +4,16 @@ import io.github.cdimascio.dotenv.Dotenv;
 import javax.swing.*;
 import javax.mail.*;
 import javax.mail.internet.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Properties;
 
 public class EmailSender extends JFrame {
-    private JTextField emailField, ccField, dateRangeField;
+    private JTextField emailField, toField, ccField, dateRangeField;
     private JPasswordField passwordField;
     private JLabel attachmentLabel;
     private JButton sendButton, attachButton;
@@ -25,13 +28,19 @@ public class EmailSender extends JFrame {
         setSize(400, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setLayout(null);
 
-        // Create components
+        ImageIcon icon = new ImageIcon(getClass().getResource("/images/e-sig.png"));
+        setIconImage(icon.getImage());
+
         JLabel emailLabel = new JLabel("Email Address:");
         emailField = new JTextField(email != null ? email : "");
 
         JLabel passwordLabel = new JLabel("Password:");
         passwordField = new JPasswordField(password != null ? password : "");
+
+        JLabel toLabel = new JLabel("To:");
+        toField = new JTextField();
 
         JLabel ccLabel = new JLabel("CC (comma-separated):");
         ccField = new JTextField();
@@ -43,27 +52,47 @@ public class EmailSender extends JFrame {
         attachButton = new JButton("Attach File");
         sendButton = new JButton("Send Email");
 
+        JLabel linkLabel = new JLabel("e-sig here");
+        linkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel.setBounds(20, 300, 100, 25);
+        linkLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        linkLabel.setForeground(Color.blue);
+        linkLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openWebPage(EmailConstants.E_SIG_SITE);
+            }
+        });
+
+        // Set layout
         setLayout(null);
         emailLabel.setBounds(20, 20, 100, 25);
         emailField.setBounds(120, 20, 250, 25);
         passwordLabel.setBounds(20, 60, 100, 25);
         passwordField.setBounds(120, 60, 250, 25);
-        ccLabel.setBounds(20, 100, 150, 25);
-        ccField.setBounds(170, 100, 200, 25);
-        dateRangeLabel.setBounds(20, 140, 100, 25);
-        dateRangeField.setBounds(120, 140, 250, 25);
-        attachButton.setBounds(20, 180, 120, 30);
-        attachmentLabel.setBounds(150, 180, 220, 25);
-        sendButton.setBounds(150, 220, 100, 30);
+        toLabel.setBounds(20, 100, 100, 25);
+        toField.setBounds(120, 100, 250, 25);
+        ccLabel.setBounds(20, 140, 150, 25);
+        ccField.setBounds(170, 140, 200, 25);
+        dateRangeLabel.setBounds(20, 180, 100, 25);
+        dateRangeField.setBounds(120, 180, 250, 25);
+        linkLabel.setBounds(20, 220, 120, 30); // Adjust position for link label
+        attachButton.setBounds(150, 220, 120, 30);
+        attachmentLabel.setBounds(280, 220, 200, 25);
+        sendButton.setBounds(150, 260, 100, 30);
 
+        // Add components to frame
         add(emailLabel);
         add(emailField);
         add(passwordLabel);
         add(passwordField);
+        add(toLabel);
+        add(toField);
         add(ccLabel);
         add(ccField);
         add(dateRangeLabel);
         add(dateRangeField);
+        add(linkLabel); // Add hyperlink label
         add(attachButton);
         add(attachmentLabel);
         add(sendButton);
@@ -83,6 +112,14 @@ public class EmailSender extends JFrame {
         });
     }
 
+    private void openWebPage(String uri) {
+        try {
+            Desktop.getDesktop().browse(new java.net.URI(uri));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void chooseFile() {
         JFileChooser fileChooser = new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(this);
@@ -94,11 +131,12 @@ public class EmailSender extends JFrame {
 
     private void sendEmail() {
         String email = emailField.getText();
+        String to = toField.getText();
         String cc = ccField.getText();
         String dateRange = dateRangeField.getText();
         String password = new String(passwordField.getPassword());
-        String subject = "Payslip for " + dateRange;
-        String body = "Good Morning, attached here is my signed payslip for " + dateRange + ". Thank you so much.";
+        String subject = String.format(EmailConstants.SUBJECT_TEMPLATE, dateRange);
+        String body = String.format(EmailConstants.BODY_TEMPLATE, dateRange);
 
         Properties properties = new Properties();
         properties.put("mail.smtp.auth", "true");
@@ -115,7 +153,7 @@ public class EmailSender extends JFrame {
         try {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(email));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
 
             if (!cc.isEmpty()) {
                 message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
