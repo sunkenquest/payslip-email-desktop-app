@@ -1,0 +1,54 @@
+# Ignore Maven build files
+target/
+*.jar
+*.war
+*.ear
+
+# Ignore Eclipse files
+.classpath
+.project
+.settings/
+bin/
+tmp/
+*.log
+
+# Ignore IntelliJ IDEA files
+.idea/
+*.iml
+out/
+
+# Ignore NetBeans files
+nbproject/private/
+nbbuild/
+build/
+dist/
+nbproject/Makefile-*
+
+# Ignore Gradle files (if applicable)
+.gradle/
+build/
+*.gradle
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore local environment files
+*.local
+*.env
+
+# Ignore IDE specific files
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore Maven Wrapper files (if using)
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Ignore dependency management files
+dependency-reduced-pom.xml
+
+# Ignore test output files
+surefire-reports/
+test-output/
